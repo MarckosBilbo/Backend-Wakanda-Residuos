@@ -1,0 +1,12 @@
+@startuml
+actor Ciudadano
+
+usecase "Consultar nivel de llenado de papeleras" as U1
+usecase "Consultar composición de residuos en papeleras" as U2
+usecase "Consultar puntos limpios cercanos" as U3
+
+Ciudadano --> U1
+Ciudadano --> U2
+Ciudadano --> U3
+
+@enduml

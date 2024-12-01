@@ -1,0 +1,40 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Papelera {
+  - id : Long
+  - ubicacion : String
+  - nivelLlenado : int
+  - ultimaActualizacion : LocalDateTime
+}
+
+class PuntoLimpio {
+  - id : Long
+  - ubicacion : String
+  - tiposAceptados : String
+}
+
+class PapeleraService {
+  + actualizarNivelLlenado()
+  + obtenerEstadoPapelera()
+}
+
+class PuntoLimpioService {
+  + obtenerPuntoLimpioMasCercano()
+  + listarPuntosLimpios()
+}
+
+class PapeleraController {
+  + API endpoints for bins
+}
+
+class PuntoLimpioController {
+  + API endpoints for recycling points
+}
+
+Papelera --> PapeleraService
+PapeleraService --> PapeleraController
+
+PuntoLimpio --> PuntoLimpioService
+PuntoLimpioService --> PuntoLimpioController
+@enduml
