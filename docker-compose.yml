@@ -1,8 +1,57 @@
 services:
-  mysql:
-    image: mysql:9.0
+  eureka-server:
+    image: eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - eureka.client.register-with-eureka=false
+      - eureka.client.fetch-registry=false
+
+  mysql-residuos:
+    image: mysql:8.0
+    container_name: mysql-residuos
     environment:
       - MYSQL_DATABASE=Backend-Wakanda-Residuos
       - MYSQL_ROOT_PASSWORD=P4ssword!
     ports:
-      - 3307:3306
+      - "3313:3306"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "3306", "-u", "root", "-pP4ssword!"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  backend-wakanda-residuos:
+    build:
+      context: ./ # Ruta a tu Dockerfile del microservicio
+    container_name: backend-wakanda-residuos
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-residuos:3306/Backend-Wakanda-Residuos?serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=P4ssword!
+    depends_on:
+      mysql-residuos:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    ports:
+      - "8093:8093"
+    networks:
+      - backend-network
+    entrypoint: [
+      "./wait-for-it.sh", "eureka-server:8761", "-t", "60", "--",
+      "./wait-for-it.sh", "mysql-residuos:3306", "-t", "60", "--",
+      "java", "-jar", "/app/backend_wakanda_residuos.jar"
+    ]
+
+networks:
+  backend-network:
+    external: true
