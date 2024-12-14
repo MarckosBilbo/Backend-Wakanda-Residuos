@@ -1,4 +1,21 @@
 services:
+  mysql:
+    image: mysql:8.0
+    hostname: mysql-wakanda-residuos
+    container_name: mysql-wakanda-residuos
+    environment:
+      - MYSQL_DATABASE=Backend_Wakanda_Residuos
+      - MYSQL_ROOT_PASSWORD=P4ssword!
+    ports:
+      - "3313:3306"  # HOST:3313 -> CONTENEDOR:3306
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "3306", "-u", "root", "-pP4ssword!"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
   eureka-server:
     image: eureka-server:latest
     container_name: eureka-server
@@ -11,46 +28,32 @@ services:
       - eureka.client.register-with-eureka=false
       - eureka.client.fetch-registry=false
 
-  mysql-residuos:
-    image: mysql:8.0
-    container_name: mysql-residuos
-    environment:
-      - MYSQL_DATABASE=Backend-Wakanda-Residuos
-      - MYSQL_ROOT_PASSWORD=P4ssword!
-    ports:
-      - "3313:3306"
-    networks:
-      - backend-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "3306", "-u", "root", "-pP4ssword!"]
-      interval: 10s
-      retries: 5
-      timeout: 5s
-
   backend-wakanda-residuos:
     build:
-      context: ./ # Ruta a tu Dockerfile del microservicio
+      context: ./
     container_name: backend-wakanda-residuos
+    ports:
+      - "8093:8093"  # Ajuste para igualar la configuración del contenedor backend
+    networks:
+      - backend-network
     environment:
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=default
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-residuos:3306/Backend-Wakanda-Residuos?serverTimezone=UTC
+      - eureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-wakanda-residuos:3306/Backend_Wakanda_Residuos?serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=P4ssword!
     depends_on:
-      mysql-residuos:
+      mysql:
         condition: service_healthy
-      eureka-server:
-        condition: service_started
-    ports:
-      - "8093:8093"
-    networks:
-      - backend-network
     entrypoint: [
       "./wait-for-it.sh", "eureka-server:8761", "-t", "60", "--",
-      "./wait-for-it.sh", "mysql-residuos:3306", "-t", "60", "--",
+      "./wait-for-it.sh", "mysql-wakanda-residuos:3306", "-t", "60", "--",
       "java", "-jar", "/app/backend_wakanda_residuos.jar"
     ]
+
+volumes:
+  mysql-data:
 
 networks:
   backend-network:

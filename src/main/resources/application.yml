@@ -1,25 +1,55 @@
-server:
-  port: 8093
-
-# Ajustar según sea necesario (si MySQL cambia, actualiza la URL)
 spring:
-  application:
-    name: backend-wakanda-residuos
-
   datasource:
-    url: jdbc:mysql://mysql-ocio:3306/Backend-Wakanda-Residuos?serverTimezone=UTC
+    url: jdbc:mysql://mysql-wakanda-residuos:3306/Backend_Wakanda_Residuos?serverTimezone=UTC
     username: root
     password: P4ssword!
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+
   jpa:
     hibernate:
       ddl-auto: update
+    open-in-view: false
     properties:
+      dialect: org.hibernate.dialect.MySQLDialect
       hibernate:
         jdbc:
           lob:
             non_contextual_creation: true
+        id:
+          new_generator_mappings: true
 
-# Configuración Eureka
+  application:
+    name: backend-wakanda-residuos
+
+server:
+  port: 8093
+
+jwt:
+  secret: securesecretkey
+
+error:
+  handling:
+    http-status-in-json-response: true
+    exception-logging: NO_LOGGING
+    full-stacktrace-http-statuses: 5xx
+    log-levels:
+      5xx: ERROR
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.hibernate.SQL: DEBUG
+    com.myproyect.springboot: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
 eureka:
   client:
     service-url:
@@ -27,12 +57,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
-logging:
-  level:
-    root: INFO
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
+metrics:
+  export:
+    prometheus:
+      enabled: true
