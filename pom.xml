@@ -9,7 +9,7 @@
     <groupId>org.main_java</groupId>
     <artifactId>Backend-Wakanda-Residuos</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>Springboot</name>
     <dependencyManagement>
         <dependencies>
