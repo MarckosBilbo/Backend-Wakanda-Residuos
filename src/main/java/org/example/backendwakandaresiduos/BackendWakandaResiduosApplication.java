@@ -11,6 +11,11 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @EnableDiscoveryClient
 @SpringBootApplication
@@ -21,19 +26,49 @@ public class BackendWakandaResiduosApplication {
     }
 
     @Bean
-    public CommandLineRunner initData(PapeleraRepository papeleraRepository, PuntoLimpioRepository puntoLimpioRepository) {
+    CommandLineRunner run(PapeleraRepository papeleraRepository, PuntoLimpioRepository puntoLimpioRepository) {
         return args -> {
-            // Inicializar papeleras con datos ficticios
-            papeleraRepository.save(new Papelera("Calle 1", 30, LocalDateTime.now()));
-            papeleraRepository.save(new Papelera("Calle 2", 80, LocalDateTime.now()));
-            papeleraRepository.save(new Papelera("Calle 3", 150, LocalDateTime.now()));
-            papeleraRepository.save(new Papelera("Avenida Principal", 200, LocalDateTime.now()));
+            Random random = new Random();
 
-            // Inicializar puntos limpios con datos ficticios
-            puntoLimpioRepository.save(new PuntoLimpio("Plaza Central", "Electrónicos, Plásticos, Orgánicos"));
-            puntoLimpioRepository.save(new PuntoLimpio("Zona Norte", "Electrónicos, Vidrio, Papel"));
-            puntoLimpioRepository.save(new PuntoLimpio("Zona Sur", "Orgánicos, Metales"));
-            puntoLimpioRepository.save(new PuntoLimpio("Parque Urbano", "Electrónicos, Vidrio, Plásticos"));
+            // Limpiar y agregar datos iniciales
+            papeleraRepository.deleteAll();
+            puntoLimpioRepository.deleteAll();
+
+            // Crear papeleras
+            List<Papelera> papeleras = List.of(
+                    new Papelera("Calle 1", 30, LocalDateTime.now()),
+                    new Papelera("Calle 2", 80, LocalDateTime.now()),
+                    new Papelera("Calle 3", 150, LocalDateTime.now()),
+                    new Papelera("Avenida Principal", 200, LocalDateTime.now())
+            );
+
+            papeleraRepository.saveAll(papeleras);
+
+            // Crear puntos limpios
+            List<PuntoLimpio> puntosLimpios = List.of(
+                    new PuntoLimpio("Plaza Central", "Electrónicos, Plásticos"),
+                    new PuntoLimpio("Zona Norte", "Vidrio, Papel"),
+                    new PuntoLimpio("Zona Sur", "Orgánicos, Metales")
+            );
+
+            puntoLimpioRepository.saveAll(puntosLimpios);
+
+            // Scheduler dinámico
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(() -> {
+                System.out.println("\n[INFO] Actualizando niveles de llenado de papeleras...");
+
+                papeleraRepository.findAll().forEach(papelera -> {
+                    int cambio = random.nextInt(30) - 10; // Cambio aleatorio
+                    int nuevoNivel = Math.max(0, Math.min(250, papelera.getNivelLlenado() + cambio));
+                    papelera.setNivelLlenado(nuevoNivel);
+                    papelera.setUltimaActualizacion(LocalDateTime.now());
+                    papeleraRepository.save(papelera);
+
+                    System.out.println("Papelera en " + papelera.getUbicacion() + " - Nivel: " + nuevoNivel + "/250");
+                });
+
+            }, 0, 15, TimeUnit.SECONDS);
         };
     }
 }
