@@ -54,12 +54,15 @@ public class PapeleraService {
         papelera.setUbicacion(papeleraDTO.getUbicacion());
         papelera.setNivelLlenado(papeleraDTO.getNivelLlenado());
         papelera.setUltimaActualizacion(LocalDateTime.now());
+
+        String composicion = generarComposicionResiduos();
         papelera = papeleraRepository.save(papelera);
+
         return new PapeleraDTO(
                 papelera.getId(),
                 papelera.getUbicacion(),
                 papelera.getNivelLlenado(),
-                papelera.getUltimaActualizacion()
+                composicion
         );
     }
 
@@ -70,14 +73,16 @@ public class PapeleraService {
     public String consultarComposicionResiduos(Long id) {
         Papelera papelera = papeleraRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Papelera no encontrada"));
-
-        // Generar una composición aleatoria
-        return String.format(
-                "Orgánicos: %d%%, Plásticos: %d%%, Vidrio: %d%%, Metales: %d%%",
-                (int) (Math.random() * 40),
-                (int) (Math.random() * 30),
-                (int) (Math.random() * 20),
-                (int) (Math.random() * 10)
-        );
+        return generarComposicionResiduos();
     }
+
+    // Generador de composición aleatoria
+    private String generarComposicionResiduos() {
+        int organico = (int) (Math.random() * 50) + 10; // Entre 10 y 50%
+        int resto = (int) (Math.random() * (100 - organico - 10)); // Resto variable
+        int envases = 100 - organico - resto;
+
+        return String.format("Orgánico: %d%%, Resto: %d%%, Envases: %d%%", organico, resto, envases);
+    }
+
 }

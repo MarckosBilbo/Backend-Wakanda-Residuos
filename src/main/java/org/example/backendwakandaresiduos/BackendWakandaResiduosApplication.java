@@ -1,5 +1,6 @@
 package org.example.backendwakandaresiduos;
 
+import org.example.backendwakandaresiduos.services.*;
 import org.example.backendwakandaresiduos.domain.Papelera;
 import org.example.backendwakandaresiduos.domain.PuntoLimpio;
 import org.example.backendwakandaresiduos.repos.PapeleraRepository;
@@ -26,49 +27,35 @@ public class BackendWakandaResiduosApplication {
     }
 
     @Bean
-    CommandLineRunner run(PapeleraRepository papeleraRepository, PuntoLimpioRepository puntoLimpioRepository) {
+    CommandLineRunner run(PapeleraRepository papeleraRepository,
+                          PuntoLimpioRepository puntoLimpioRepository,
+                          PapeleraService papeleraService) {
         return args -> {
             Random random = new Random();
 
-            // Limpiar y agregar datos iniciales
-            papeleraRepository.deleteAll();
-            puntoLimpioRepository.deleteAll();
+            // Inicializar papeleras
+            papeleraRepository.save(new Papelera("Calle A", random.nextInt(100), LocalDateTime.now()));
+            papeleraRepository.save(new Papelera("Calle B", random.nextInt(100), LocalDateTime.now()));
 
-            // Crear papeleras
-            List<Papelera> papeleras = List.of(
-                    new Papelera("Calle 1", 30, LocalDateTime.now()),
-                    new Papelera("Calle 2", 80, LocalDateTime.now()),
-                    new Papelera("Calle 3", 150, LocalDateTime.now()),
-                    new Papelera("Avenida Principal", 200, LocalDateTime.now())
-            );
+            // Inicializar puntos limpios
+            puntoLimpioRepository.save(new PuntoLimpio("Parque Central", "Orgánicos, Envases"));
+            puntoLimpioRepository.save(new PuntoLimpio("Avenida Norte", "Resto, Plásticos"));
 
-            papeleraRepository.saveAll(papeleras);
-
-            // Crear puntos limpios
-            List<PuntoLimpio> puntosLimpios = List.of(
-                    new PuntoLimpio("Plaza Central", "Electrónicos, Plásticos"),
-                    new PuntoLimpio("Zona Norte", "Vidrio, Papel"),
-                    new PuntoLimpio("Zona Sur", "Orgánicos, Metales")
-            );
-
-            puntoLimpioRepository.saveAll(puntosLimpios);
-
-            // Scheduler dinámico
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(() -> {
-                System.out.println("\n[INFO] Actualizando niveles de llenado de papeleras...");
-
-                papeleraRepository.findAll().forEach(papelera -> {
-                    int cambio = random.nextInt(30) - 10; // Cambio aleatorio
-                    int nuevoNivel = Math.max(0, Math.min(250, papelera.getNivelLlenado() + cambio));
-                    papelera.setNivelLlenado(nuevoNivel);
-                    papelera.setUltimaActualizacion(LocalDateTime.now());
-                    papeleraRepository.save(papelera);
-
-                    System.out.println("Papelera en " + papelera.getUbicacion() + " - Nivel: " + nuevoNivel + "/250");
+                System.out.println("\n[INFO] Estado actual de las papeleras:");
+                papeleraRepository.findAll().forEach(p -> {
+                    String composicion = papeleraService.consultarComposicionResiduos(p.getId());
+                    System.out.println("Papelera en " + p.getUbicacion() +
+                            " | Nivel llenado: " + p.getNivelLlenado() + "% | " + composicion);
                 });
 
-            }, 0, 15, TimeUnit.SECONDS);
+                System.out.println("\n[INFO] Puntos limpios disponibles:");
+                puntoLimpioRepository.findAll().forEach(p -> {
+                    System.out.println("Punto limpio: " + p.getUbicacion() +
+                            " | Acepta: " + p.getTiposAceptados());
+                });
+            }, 0, 10, TimeUnit.SECONDS);
         };
     }
 }

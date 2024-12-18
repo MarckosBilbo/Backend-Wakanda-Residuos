@@ -27,6 +27,7 @@ public class PuntoLimpioService {
                 .collect(Collectors.toList());
     }
 
+
     /**
      * Obtener el punto limpio más cercano (simulado).
      */
